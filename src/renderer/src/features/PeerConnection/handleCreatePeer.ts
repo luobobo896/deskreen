@@ -2,7 +2,7 @@
 import createDesktopCapturerStream from './createDesktopCapturerStream';
 import handlePeerOnData from './handlePeerOnData';
 import NullSimplePeer from './NullSimplePeer';
-// import simplePeerHandleSdpTransform from './simplePeerHandleSdpTransform';
+import simplePeerHandleSdpTransform from './simplePeerHandleSdpTransform';
 
 export default function handleCreatePeer(
 	peerConnection: PeerConnection,
@@ -44,7 +44,7 @@ export default function handleCreatePeer(
 					// trickle: false,
 					// wrtc: window.api.wrtc,
 					config: { iceServers: [] },
-					// sdpTransform: simplePeerHandleSdpTransform,
+					sdpTransform: simplePeerHandleSdpTransform,
 				});
 				// }
 
@@ -58,6 +58,33 @@ export default function handleCreatePeer(
 					peerConnection.signalsDataToCallUser.push(data);
 				});
 
+				peerConnection.peer.on('connect', () => {
+					// Apply low-latency encoding parameters after connection
+					try {
+						const pc = peerConnection.peer._pc as RTCPeerConnection;
+						const sender = pc?.getSenders()?.find((s) => s.track?.kind === 'video');
+						if (sender) {
+							const params = sender.getParameters();
+							if (params.encodings && params.encodings.length > 0) {
+								params.encodings[0].maxBitrate = 50_000_000; // 50Mbps cap
+								params.encodings[0].maxFramerate = 60;
+								params.encodings[0].scaleResolutionDownBy = 1; // never downscale
+								// @ts-ignore priority exists in Chrome
+								params.encodings[0].priority = 'high';
+								// @ts-ignore networkPriority exists in Chrome
+								params.encodings[0].networkPriority = 'high';
+								sender.setParameters(params).catch(() => {});
+							}
+							// @ts-ignore degradationPreference exists in Chrome
+							if (sender.setDegradationPreference) {
+								// @ts-ignore
+								sender.setDegradationPreference('maintain-framerate').catch(() => {});
+							}
+						}
+					} catch (e) {
+						console.warn('Failed to set encoding params', e);
+					}
+				});
 				peerConnection.peer.on('data', (data) => {
 					handlePeerOnData(peerConnection, data);
 				});

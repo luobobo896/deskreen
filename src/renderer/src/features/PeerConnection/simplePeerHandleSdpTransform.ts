@@ -1,7 +1,5 @@
-import setSdpMediaBitrate from './setSdpMediaBitrate';
+import optimizeSdpForLowLatency from './optimizeSdpForLowLatency';
 
 export default (sdp: string): string => {
-	let newSDP = sdp;
-	newSDP = setSdpMediaBitrate(newSDP, 'video', 500000);
-	return newSDP;
+	return optimizeSdpForLowLatency(sdp);
 };

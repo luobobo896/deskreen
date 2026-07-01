@@ -2,7 +2,6 @@ import { resolve } from 'path';
 import {
 	defineConfig,
 	externalizeDepsPlugin,
-	bytecodePlugin,
 } from 'electron-vite';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -66,7 +65,7 @@ const copySimplePeerMinJsStaticFiles = () => {
 
 export default defineConfig({
 	main: {
-		plugins: [externalizeDepsPlugin(), bytecodePlugin()],
+		plugins: [externalizeDepsPlugin()],
 	},
 	preload: {
 		build: {
@@ -78,7 +77,7 @@ export default defineConfig({
 				},
 			},
 		},
-		plugins: [externalizeDepsPlugin(), bytecodePlugin()],
+		plugins: [externalizeDepsPlugin()],
 	},
 	renderer: {
 		build: {

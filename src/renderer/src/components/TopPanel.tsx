@@ -338,7 +338,7 @@ export default function TopPanel({ handleReset }: Props): React.ReactElement {
 			id="logo-with-popover-visit-website"
 			className={classes.logoWithAppName}
 		>
-			<H3>Deskreen Community Edition</H3>
+			<H3>Deskreen</H3>
 		</div>
 	);
 
@@ -348,7 +348,8 @@ export default function TopPanel({ handleReset }: Props): React.ReactElement {
 				<Row middle="xs" center="xs" style={{ width: '100%' }}>
 					<Col>{renderLogoWithAppName}</Col>
 				</Row>
-				<div className={classes.donateButtonRoot}>{renderDonateButton}</div>
+					{/* Multi-device support: removed Pro upgrade button */}
+				{/* Multi-device support: removed Pro upgrade button */}
 				<div className={classes.topPanelControlsWrapper}>
 					<div className={classes.topPanelControlButtonsRoot}>
 						{renderConnectedDevicesListButton}

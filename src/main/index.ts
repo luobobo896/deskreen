@@ -131,7 +131,7 @@ export default class DeskreenApp {
 		});
 
 		app.whenReady().then(async () => {
-			app.setAppUserModelId('com.deskreen-ce.app');
+			app.setAppUserModelId('com.deskreen.app');
 			if (process.platform === 'darwin') {
 				app.setActivationPolicy('regular');
 			}
@@ -187,7 +187,7 @@ export default class DeskreenApp {
 	private showUpdateNotification(latestAppVersion: string): void {
 		const deskreenGlobal = getDeskreenGlobal();
 		const notification = new Notification({
-			title: i18n.t('deskreen-ce-update-is-available'),
+			title: i18n.t('deskreen-update-is-available'),
 			body: `${i18n.t('your-current-version-is')} ${deskreenGlobal.currentAppVersion} | ${i18n.t(
 				'click-to-download-new-updated-version',
 			)} ${latestAppVersion}`,
@@ -217,7 +217,7 @@ export default class DeskreenApp {
 			titleBarStyle: 'hiddenInset',
 			frame: process.platform === 'darwin' ? false : true,
 			useContentSize: true,
-			title: 'Deskreen CE',
+			title: 'Deskreen',
 			// useContentSize: true,
 			autoHideMenuBar: true,
 			...(process.platform === 'linux' ? { icon } : {}),

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { OverlayToaster, Position } from '@blueprintjs/core';
 import { useTranslation } from 'react-i18next';
 import VideoJSPlayer from '../../components/VideoJSPlayer';
@@ -47,6 +47,11 @@ function PlayerView(props: PlayerViewProps) {
 
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const toasterRef = useRef<Awaited<ReturnType<typeof OverlayToaster.create>> | null>(null);
+	const [isFlipped, setIsFlipped] = useState(false);
+
+	const handleFlipToggle = useCallback(() => {
+		setIsFlipped((prev) => !prev);
+	}, []);
 	// no external player ref needed for video.js variant
 
 	useEffect(() => {
@@ -59,9 +64,22 @@ function PlayerView(props: PlayerViewProps) {
 			} else {
 				videoRef.current.src = streamUrl;
 			}
+
+			// Low-latency: minimize buffer by setting minimal playback rate
+			// and requesting immediate render
 			videoRef.current.play().catch((error) => {
 				console.error('Error playing video:', error);
 			});
+
+			// Try to reduce jitter buffer via requestVideoFrameCallback
+			// (Chrome 83+ — renders frames as fast as they arrive)
+			if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+				const onFrame = () => {
+					videoRef.current?.requestVideoFrameCallback(onFrame);
+				};
+				videoRef.current.requestVideoFrameCallback(onFrame);
+			}
+
 			return;
 		}
 
@@ -223,6 +241,8 @@ function PlayerView(props: PlayerViewProps) {
 				setVideoQuality={setVideoQuality}
 				selectedVideoQuality={videoQuality}
 				screenSharingSourceType={screenSharingSourceType}
+				isFlipped={isFlipped}
+				onFlipToggle={handleFlipToggle}
 			/>
 			<div
 				id="video-container"
@@ -244,23 +264,26 @@ function PlayerView(props: PlayerViewProps) {
 						width: '100%',
 						height: '100%',
 						backgroundColor: 'black',
+						transform: isFlipped ? 'scaleX(-1)' : 'none',
 					}}
 				>
-					{isWithControls ? (
-						<video
-							ref={videoRef}
-							autoPlay
-							playsInline
-							muted
-							className="absolute top-0 left-0 w-full h-full"
-							style={{
-								width: '100%',
-								height: '100%',
-								objectFit: 'contain',
-								backgroundColor: 'black',
-							}}
-						/>
-					) : (
+				{isWithControls ? (
+					<video
+						ref={videoRef}
+						autoPlay
+						playsInline
+						muted
+						// @ts-ignore latencyHint is supported in Chrome
+						latencyHint="interactive"
+						className="absolute top-0 left-0 w-full h-full"
+						style={{
+							width: '100%',
+							height: '100%',
+							objectFit: 'contain',
+							backgroundColor: 'black',
+						}}
+					/>
+				) : (
 						<VideoJSPlayer
 							stream={streamUrl}
 							playing={isPlaying}

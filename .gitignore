@@ -15,3 +15,7 @@ tsconfig.web.tsbuildinfo
 src/client-viewer/.env
 
 AGENTS.md
+# Build artifacts
+.electron-cache/
+localappdata/
+build.log

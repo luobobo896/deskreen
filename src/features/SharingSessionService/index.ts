@@ -74,14 +74,7 @@ export default class SharingSessionService {
 			});
 		}
 
-		if (!this.connectedDevicesService.isSlotAvailable()) {
-			return Promise.reject(
-				new Error(
-					'unable to create waiting session while a device is connected',
-				),
-			);
-		}
-
+		// Multi-device support: removed slot availability check
 		this.isCreatingNewSharingSession = true;
 
 		return new Promise<SharingSession>((resolve, reject) => {

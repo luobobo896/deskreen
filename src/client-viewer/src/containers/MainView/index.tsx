@@ -1,5 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Grid } from 'react-flexbox-grid';
+import {
+	Button,
+	Card,
+	Elevation,
+	FormGroup,
+	InputGroup,
+	Intent,
+	H3,
+	Text,
+} from '@blueprintjs/core';
 import screenfull from 'screenfull';
 import './index.css';
 import PeerConnection from '../../features/PeerConnection';
@@ -41,7 +51,7 @@ function MainView() {
 	const [url, setUrl] = useState<MediaStream | null>(null);
 	const [screenSharingSourceType, setScreenSharingSourceType] =
 		useState<ScreenSharingSourceType>(ScreenSharingSource.SCREEN);
-	const [isWithControls, setIsWithControls] = useState(!screenfull.isEnabled);
+	const [isWithControls, setIsWithControls] = useState(true); // Use native <video> by default — better WebRTC MediaStream compatibility
 	const [isShownTextPrompt, setIsShownTextPrompt] = useState(false);
 	const [isShownLoadingSharingIcon, setIsShownLoadingSharingIcon] =
 		useState(false);
@@ -52,6 +62,25 @@ function MainView() {
 	);
 	const [peer, setPeer] = useState<undefined | PeerConnection>();
 	const [connectionRoomId, setConnectionRoomId] = useState<string>('');
+	const [roomInputValue, setRoomInputValue] = useState('');
+	const [isRoomSubmitted, setIsRoomSubmitted] = useState(false);
+
+	const handleRoomSubmit = useCallback(() => {
+		const trimmed = roomInputValue.trim();
+		if (trimmed) {
+			setConnectionRoomId(trimmed);
+			setIsRoomSubmitted(true);
+		}
+	}, [roomInputValue]);
+
+	const handleRoomKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === 'Enter') {
+				handleRoomSubmit();
+			}
+		},
+		[handleRoomSubmit],
+	);
 
 	useEffect(() => {
 		const { pathname } = window.location;
@@ -62,11 +91,13 @@ function MainView() {
 
 		if (extractedRoomId !== '') {
 			setConnectionRoomId(extractedRoomId);
+			setIsRoomSubmitted(true);
 			return;
 		}
 
-		const fallbackRoomId = Math.random().toString(36).substring(2, 10);
-		setConnectionRoomId(fallbackRoomId);
+		// No room ID in URL — show input form
+		setConnectionRoomId('');
+		setIsRoomSubmitted(false);
 	}, []);
 
 	useEffect(handleSetVideoQuality(videoQuality, peer), [videoQuality, peer]);
@@ -119,6 +150,69 @@ function MainView() {
 
 	return (
 		<Grid>
+			{!isRoomSubmitted && (
+				<div
+					style={{
+						position: 'absolute',
+						top: 0,
+						left: 0,
+						width: '100%',
+						height: '100vh',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						backgroundColor: '#1c2127',
+						zIndex: 100,
+					}}
+				>
+					<Card
+						elevation={Elevation.FOUR}
+						style={{
+							maxWidth: 480,
+							width: '90%',
+							padding: 32,
+							textAlign: 'center',
+						}}
+					>
+						<img
+							src="/img/logo512.png"
+							alt="Deskreen"
+							style={{ height: 80, marginBottom: 16 }}
+						/>
+						<H3 style={{ marginBottom: 8 }}>Deskreen Viewer</H3>
+						<Text className="bp3-text-muted" style={{ marginBottom: 24 }}>
+							Enter the connection code shown on the host computer
+						</Text>
+						<FormGroup
+							label="Connection Code"
+							labelFor="room-input"
+							style={{ marginBottom: 16 }}
+						>
+							<InputGroup
+								id="room-input"
+								large
+								placeholder="e.g. 100391"
+								value={roomInputValue}
+								onChange={(e) => setRoomInputValue(e.target.value)}
+								onKeyDown={handleRoomKeyDown}
+								intent={Intent.PRIMARY}
+								autoFocus
+								style={{ textAlign: 'center', fontSize: 20 }}
+							/>
+						</FormGroup>
+						<Button
+							intent={Intent.PRIMARY}
+							large
+							fill
+							onClick={handleRoomSubmit}
+							disabled={!roomInputValue.trim()}
+							style={{ height: 44, fontSize: 16 }}
+						>
+							Connect
+						</Button>
+					</Card>
+				</div>
+			)}
 			<ConnectionPropmpts
 				myDeviceDetails={myDeviceDetails}
 				isShownTextPrompt={isShownTextPrompt}

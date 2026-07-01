@@ -107,7 +107,7 @@ function ConnectionPropmpts(props: ConnectionPropmptsProps) {
 								/>
 							</Row>
 							<Row center="xs">
-								<H3>Deskreen CE Viewer</H3>
+								<H3>Deskreen Viewer</H3>
 							</Row>
 							<Row center="xs" style={{ width: '100%', margin: '0 auto' }}>
 								<Col md={6} xl={4}>

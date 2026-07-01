@@ -10,6 +10,7 @@ import {
 	type ProcessedPayload,
 } from '../../utils/message';
 import setSdpMediaBitrate from './setSdpMediaBitrate';
+import optimizeSdpForLowLatency from './optimizeSdpForLowLatency';
 import VideoAutoQualityOptimizer from '../VideoAutoQualityOptimizer';
 import {
 	VideoQuality,
@@ -196,13 +197,7 @@ export default class PeerConnection {
 			initiator: false,
 			config: { iceServers: [] },
 			sdpTransform: (sdp) => {
-				let newSDP = sdp;
-				newSDP = setSdpMediaBitrate(
-					newSDP as unknown as string,
-					'video',
-					500000,
-				) as unknown as typeof sdp;
-				return newSDP;
+				return optimizeSdpForLowLatency(sdp as unknown as string) as unknown as typeof sdp;
 			},
 		});
 

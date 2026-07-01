@@ -353,15 +353,7 @@ export const initIpcMainHandlers = (mainWindow: BrowserWindow): void => {
 		const deskreenGlobal = getDeskreenGlobal();
 		const { connectedDevicesService, sharingSessionService, roomIDService } =
 			deskreenGlobal;
-		if (!connectedDevicesService.isSlotAvailable()) {
-			const waitingSession =
-				sharingSessionService.waitingForConnectionSharingSession;
-			waitingSession?.denyConnectionForPartner();
-			waitingSession?.setStatus(SharingSessionStatusEnum.NOT_CONNECTED);
-			sharingSessionService.waitingForConnectionSharingSession = null;
-			connectedDevicesService.resetPendingConnectionDevice();
-			return;
-		}
+		// Multi-device support: removed slot availability check
 
 		const pendingDevice = connectedDevicesService.pendingConnectionDevice;
 		if (!pendingDevice.id) {

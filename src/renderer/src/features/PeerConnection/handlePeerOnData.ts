@@ -1,5 +1,4 @@
 import DesktopCapturerSourceType from '../../../../common/DesktopCapturerSourceType';
-import getDesktopSourceStreamBySourceID from './getDesktopSourceStreamBySourceID';
 import prepareDataMessageToSendScreenSourceType from './prepareDataMessageToSendScreenSourceType';
 import NullSimplePeer from './NullSimplePeer';
 
@@ -11,8 +10,6 @@ export default async function handlePeerOnData(
 
 	if (dataJSON.type === 'set_video_quality') {
 		const maxVideoQualityMultiplier = dataJSON.payload.value;
-		const minVideoQualityMultiplier =
-			maxVideoQualityMultiplier === 1 ? 0.5 : maxVideoQualityMultiplier;
 
 		if (
 			!peerConnection.desktopCapturerSourceID.includes(
@@ -21,37 +18,25 @@ export default async function handlePeerOnData(
 		)
 			return;
 
-		const newStream = await getDesktopSourceStreamBySourceID(
-			peerConnection.desktopCapturerSourceID,
-			peerConnection.sourceDisplaySize?.width,
-			peerConnection.sourceDisplaySize?.height,
-			minVideoQualityMultiplier,
-			maxVideoQualityMultiplier,
-			60,
-			60,
-		);
-		const newVideoTrack = newStream.getVideoTracks()[0];
-		const oldStream = peerConnection.localStream;
-		const oldTrack = oldStream?.getVideoTracks()[0];
+		// Apply quality change via track constraints instead of creating
+		// a new stream — avoids re-triggering screen capture permission dialog
+		const videoTrack = peerConnection.localStream?.getVideoTracks()[0];
+		if (!videoTrack) return;
 
-		if (oldTrack && oldStream && peerConnection.peer !== NullSimplePeer) {
-			await peerConnection.peer.replaceTrack(
-				oldTrack,
-				newVideoTrack,
-				oldStream,
-			);
-			// stop only the old track (it's already removed from the stream by replaceTrack)
-			oldTrack.stop();
-			// stop any remaining tracks in the old stream, but don't stop the new track
-			oldStream.getTracks().forEach((track) => {
-				if (track.id !== newVideoTrack.id) {
-					track.stop();
-				}
+		const sourceWidth = peerConnection.sourceDisplaySize?.width ?? 1920;
+		const sourceHeight = peerConnection.sourceDisplaySize?.height ?? 1080;
+		const targetWidth = Math.round(sourceWidth * maxVideoQualityMultiplier);
+		const targetHeight = Math.round(sourceHeight * maxVideoQualityMultiplier);
+
+		try {
+			await videoTrack.applyConstraints({
+				width: { ideal: targetWidth },
+				height: { ideal: targetHeight },
+				frameRate: { ideal: 60 },
 			});
+		} catch (e) {
+			console.warn('applyConstraints failed, ignoring quality change', e);
 		}
-
-		// update local stream reference to new stream
-		peerConnection.localStream = newStream;
 	}
 
 	if (dataJSON.type === 'get_sharing_source_type') {
