@@ -203,6 +203,27 @@ const DeskreenStepper = ({
 		};
 	}, [setIsAllowDeviceAlertOpen, setPendingConnectionDevice]);
 
+	// 监听设备断开事件，修复断连后 UI 仍显示"已连接"的 bug
+	useEffect(() => {
+		const handleResetConnectionState = (): void => {
+			setPendingConnectionDevice(null);
+			setIsUserAllowedConnection(false);
+			setIsAllowDeviceAlertOpen(false);
+		};
+
+		window.electron.ipcRenderer.on(
+			IpcEvents.ResetConnectionState,
+			handleResetConnectionState,
+		);
+
+		return () => {
+			window.electron.ipcRenderer.removeListener(
+				IpcEvents.ResetConnectionState,
+				handleResetConnectionState,
+			);
+		};
+	}, [setPendingConnectionDevice, setIsUserAllowedConnection, setIsAllowDeviceAlertOpen]);
+
 	const handleUserClickedDeviceDisconnectButton =
 		useCallback(async (): Promise<void> => {
 			handleReset();

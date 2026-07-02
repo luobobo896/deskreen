@@ -278,10 +278,18 @@ export const initIpcMainHandlers = (mainWindow: BrowserWindow): void => {
 
 	ipcMain.handle(IpcEvents.DisconnectDeviceById, (_, id) => {
 		getDeskreenGlobal().connectedDevicesService.disconnectDeviceByID(id);
+		// 通知渲染进程清空 pending 状态（修复断连后 UI 仍显示"已连接"的 bug）
+		if (mainWindow && !mainWindow.isDestroyed()) {
+			mainWindow.webContents.send(IpcEvents.ResetConnectionState);
+		}
 	});
 
 	ipcMain.handle(IpcEvents.DisconnectAllDevices, () => {
 		getDeskreenGlobal().connectedDevicesService.disconnectAllDevices();
+		// 通知渲染进程清空 pending 状态
+		if (mainWindow && !mainWindow.isDestroyed()) {
+			mainWindow.webContents.send(IpcEvents.ResetConnectionState);
+		}
 	});
 
 	ipcMain.handle(IpcEvents.AppLanguageChanged, (_, newLang) => {
