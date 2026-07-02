@@ -10,7 +10,6 @@ import {
 	H3,
 	Text,
 } from '@blueprintjs/core';
-import screenfull from 'screenfull';
 import './index.css';
 import PeerConnection from '../../features/PeerConnection';
 import {
@@ -102,9 +101,10 @@ function MainView() {
 
 	useEffect(handleSetVideoQuality(videoQuality, peer), [videoQuality, peer]);
 
-	useEffect(handleNoConnectionTimeout(myDeviceDetails, setIsErrorDialogOpen), [
-		myDeviceDetails,
-	]);
+	useEffect(
+		handleNoConnectionTimeout(myDeviceDetails, setIsErrorDialogOpen, peer),
+		[myDeviceDetails, peer],
+	);
 
 	useEffect(
 		handleCreatePeerConnection({

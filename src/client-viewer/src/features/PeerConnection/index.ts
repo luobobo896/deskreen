@@ -9,7 +9,6 @@ import {
 	prepare as prepareMessage,
 	type ProcessedPayload,
 } from '../../utils/message';
-import setSdpMediaBitrate from './setSdpMediaBitrate';
 import optimizeSdpForLowLatency from './optimizeSdpForLowLatency';
 import VideoAutoQualityOptimizer from '../VideoAutoQualityOptimizer';
 import {
