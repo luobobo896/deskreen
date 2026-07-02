@@ -21,6 +21,7 @@ type DisplaySize = { width: number; height: number };
 
 export interface PartnerPeerUser {
 	username: string;
+	isOwner?: boolean;
 }
 
 export default class PeerConnection {

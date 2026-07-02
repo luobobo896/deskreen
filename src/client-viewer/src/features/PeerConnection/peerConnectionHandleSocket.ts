@@ -92,13 +92,11 @@ export default (peerConnection: PeerConnection) => {
 
 	socket.on('USER_ENTER', (payload: { users: PartnerPeerUser[] }) => {
 		if (!isAllowed) return;
-		const filteredPartner = payload.users.filter((v) => {
-			return peerConnection.user.username !== v.username;
-		});
+		// 多 viewer 场景：必须找到 owner(isOwner=true)，而非用 filteredPartner[0]
+		const owner = (payload.users || []).find((v) => v.isOwner);
+		if (!owner || owner.username === peerConnection.user.username) return;
 
-		peerConnection.partner = filteredPartner[0];
-
-		if (!peerConnection.partner) return;
+		peerConnection.partner = owner;
 
 		peerConnection.sendEncryptedMessage({
 			type: 'DEVICE_DETAILS',

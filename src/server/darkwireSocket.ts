@@ -134,6 +134,24 @@ export default class Socket implements SocketOPTS {
 					createdAt: Date.now(),
 				};
 			} else {
+				// 清理已断开但未正确从 room.users 移除的僵尸用户
+				const activeSockets = socketIOServerStore.getServer().sockets.sockets;
+				const staleIds: string[] = [];
+				(room.users || []).forEach((u) => {
+					if (u.socketId && !activeSockets.has(u.socketId)) {
+						staleIds.push(u.socketId);
+					}
+				});
+				if (staleIds.length > 0) {
+					room = {
+						...room,
+						users: (room.users || []).filter(
+							(u) => !staleIds.includes(u.socketId),
+						),
+					};
+					await this.saveRoom(room);
+				}
+
 				const userFound = room.users.find(
 					(r) => r.username === payload.username,
 				);
@@ -141,18 +159,7 @@ export default class Socket implements SocketOPTS {
 			}
 
 			const isOwnerSocket = isLocalhostSocket(this.socket);
-			if (!isOwnerSocket) {
-				const connectedViewers = (room.users || []).filter((user) => {
-					return !user.isOwner;
-				});
-				if (connectedViewers.length >= 1) {
-					this.socket.emit('NOT_ALLOWED');
-					setTimeout(() => {
-						this.socket.disconnect(true);
-					}, 0);
-					return;
-				}
-			}
+			// 允许任意多个 viewer 同时连接
 
 			const newRoom: Room = {
 				...room,
@@ -209,27 +216,23 @@ export default class Socket implements SocketOPTS {
 			(u) => u.socketId === socket.id && u.isOwner,
 		);
 
-		const newRoom = {
-			...room,
-			users: (room.users || [])
-				.filter((u) => u.socketId !== socket.id)
-				.map((u, index) => ({
-					...u,
-					isOwner: index === 0,
-				})),
-		};
-
 		if (isOwnerUser) {
-			this.disconnectAllUsers(newRoom);
+			// Owner disconnected — disconnect all viewers and destroy room
+			this.disconnectAllUsers(room);
 			await this.destroyRoom();
 		} else {
+			// Viewer disconnected — only remove this viewer, keep others
+			const newRoom = {
+				...room,
+				users: (room.users || []).filter((u) => u.socketId !== socket.id),
+			};
 			await this.saveRoom(newRoom);
-		}
 
-		socketIOServerStore
-			.getServer()
-			.to(this.roomId)
-			.emit('USER_EXIT', newRoom.users);
+			socketIOServerStore
+				.getServer()
+				.to(this.roomId)
+				.emit('USER_EXIT', newRoom.users);
+		}
 
 		socket.disconnect(true);
 	}

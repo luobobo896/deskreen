@@ -2,13 +2,15 @@ export default (
 	peerConnection: PeerConnection,
 	payload: { users: PartnerPeerUser[] },
 ): void => {
-	const filteredPartner = payload.users.filter((user: PartnerPeerUser) => {
-		return peerConnection.user.username !== user.username;
-	});
+	// 多 viewer 场景：找到非 owner 的 viewer 作为 partner（过滤掉自己和 owner）
+	const viewerPartner = (payload.users || []).find(
+		(user: PartnerPeerUser) =>
+			user.username !== peerConnection.user.username && !user.isOwner,
+	);
 
-	if (filteredPartner[0] === undefined) return;
+	if (!viewerPartner) return;
 
-	[peerConnection.partner] = filteredPartner;
+	[peerConnection.partner] = [viewerPartner];
 
 	if (peerConnection.partner.username !== '') {
 		peerConnection.toggleLockRoom(true);
